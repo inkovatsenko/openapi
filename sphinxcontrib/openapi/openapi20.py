@@ -138,7 +138,18 @@ def convert_json_schema(schema, directive=':<json'):
                             name,
                             '{type_} {name}:'
                             ' {schema[description]}'.format(**locals())))
-
+                elif schema.get('title', ''):
+                    if constraints:
+                        output.append((
+                            name,
+                            '{type_} {name}:'
+                            ' {schema[title]}'
+                            ' {constraints}'.format(**locals())))
+                    else:
+                        output.append((
+                            name,
+                            '{type_} {name}:'
+                            ' {schema[title]}'.format(**locals())))
                 else:
                     if constraints:
                         output.append(
@@ -227,7 +238,7 @@ def openapihttpdomain(spec, **options):
     if 'group' in options:
         groups = collections.OrderedDict(
             [(x['name'], []) for x in spec.get('tags', {})]
-            )
+        )
 
         for endpoint in paths:
             for method, properties in spec['paths'][endpoint].items():
@@ -239,7 +250,7 @@ def openapihttpdomain(spec, **options):
                     method,
                     properties,
                     utils.get_text_converter(options),
-                    ))
+                ))
 
         for key in groups.keys():
             if key:
@@ -258,6 +269,6 @@ def openapihttpdomain(spec, **options):
                     method,
                     properties,
                     utils.get_text_converter(options),
-                    ))
+                ))
 
     return iter(itertools.chain(*generators))
