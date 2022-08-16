@@ -93,7 +93,55 @@ def convert_json_schema(schema, directive=':<json'):
 
     output = []
 
-    def _convert(schema, name='', required=False):
+    def _convert_object(name, type, required, schema):
+        if name:
+            name = name.lstrip('.')
+            constraints = []
+            if required:
+                constraints.append('required')
+            if schema.get('readOnly', False):
+                constraints.append('read only')
+            if constraints:
+                constraints = '({})'.format(', '.join(constraints))
+            else:
+                constraints = ''
+
+            if schema.get('description', ''):
+                if constraints:
+                    output.append((
+                        name,
+                        '{type} {name}:'
+                        ' {schema[description]}'
+                        ' {constraints}'.format(**locals())))
+                else:
+                    output.append((
+                        name,
+                        '{type} {name}:'
+                        ' {schema[description]}'.format(**locals())))
+            elif schema.get('title', ''):
+                if constraints:
+                    output.append((
+                        name,
+                        '{type} {name}:'
+                        ' {schema[title]}'
+                        ' {constraints}'.format(**locals())))
+                else:
+                    output.append((
+                        name,
+                        '{type} {name}:'
+                        ' {schema[title]}'.format(**locals())))
+            else:
+                if constraints:
+                    output.append(
+                        (name,
+                         '{type} {name}:'
+                         ' {constraints}'.format(**locals())))
+                else:
+                    output.append(
+                        (name,
+                         '{type} {name}:'.format(**locals())))
+
+    def _convert(schema, name='', required=False, is_array=False):
         """
         Fill the output list, with 2-tuple (name, template)
 
@@ -104,62 +152,23 @@ def convert_json_schema(schema, directive=':<json'):
 
         type_ = schema.get('type', 'any')
         required_properties = schema.get('required', ())
+
         if type_ == 'object' and schema.get('properties'):
+            if not is_array:
+                _convert_object(name, type_, required, schema)
+
             for prop, next_schema in schema.get('properties', {}).items():
                 _convert(
                     next_schema, '{name}.{prop}'.format(**locals()),
                     (prop in required_properties))
 
         elif type_ == 'array':
-            _convert(schema['items'], name + '[]')
+            _convert_object(name, type_, required, schema)
+
+            _convert(schema['items'], name + '[]', is_array=True)
 
         else:
-            if name:
-                name = name.lstrip('.')
-                constraints = []
-                if required:
-                    constraints.append('required')
-                if schema.get('readOnly', False):
-                    constraints.append('read only')
-                if constraints:
-                    constraints = '({})'.format(', '.join(constraints))
-                else:
-                    constraints = ''
-
-                if schema.get('description', ''):
-                    if constraints:
-                        output.append((
-                            name,
-                            '{type_} {name}:'
-                            ' {schema[description]}'
-                            ' {constraints}'.format(**locals())))
-                    else:
-                        output.append((
-                            name,
-                            '{type_} {name}:'
-                            ' {schema[description]}'.format(**locals())))
-                elif schema.get('title', ''):
-                    if constraints:
-                        output.append((
-                            name,
-                            '{type_} {name}:'
-                            ' {schema[title]}'
-                            ' {constraints}'.format(**locals())))
-                    else:
-                        output.append((
-                            name,
-                            '{type_} {name}:'
-                            ' {schema[title]}'.format(**locals())))
-                else:
-                    if constraints:
-                        output.append(
-                            (name,
-                             '{type_} {name}:'
-                             ' {constraints}'.format(**locals())))
-                    else:
-                        output.append(
-                            (name,
-                             '{type_} {name}:'.format(**locals())))
+            _convert_object(name, type_, required, schema)
 
     _convert(schema)
 
