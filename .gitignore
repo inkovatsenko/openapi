@@ -55,3 +55,6 @@ docs/_build/
 
 # Various shit from the OS itself
 .DS_Store
+
+# Temp files
+copier.sh

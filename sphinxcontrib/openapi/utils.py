@@ -79,7 +79,13 @@ def _resolve_refs(uri, spec):
     def _do_resolve(node):
         if isinstance(node, collections.abc.Mapping) and '$ref' in node:
             with resolver.resolving(node['$ref']) as resolved:
-                return _do_resolve(resolved)  # might have recursive references
+                # might have recursive references
+                if 'description' in node:
+                    # add description from ref node to ref body
+                    resolved['description'] = node['description']
+
+                return _do_resolve(resolved)
+
         elif isinstance(node, collections.abc.Mapping):
             for k, v in node.items():
                 node[k] = _do_resolve(v)
